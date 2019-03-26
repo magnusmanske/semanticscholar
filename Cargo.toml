@@ -1,0 +1,15 @@
+[package]
+name = "semanticscholar"
+version = "0.1.0"
+authors = ["Magnus Manske <magnusmanske@googlemail.com>"]
+edition = "2018"
+description="A wrapper around the [Semantic Scholar](https://www.semanticscholar.org/) API"
+repository="https://github.com/magnusmanske/semanticscholar"
+include = [
+    "**/*.rs",
+    "Cargo.toml",
+]
+
+[dependencies]
+serde_json = "1"
+reqwest = "0.9.11"
