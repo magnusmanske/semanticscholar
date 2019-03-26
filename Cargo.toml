@@ -5,6 +5,9 @@ authors = ["Magnus Manske <magnusmanske@googlemail.com>"]
 edition = "2018"
 description="A wrapper around the [Semantic Scholar](https://www.semanticscholar.org/) API"
 repository="https://github.com/magnusmanske/semanticscholar"
+keywords=["semanticscholar","api","publications","papers","authors","science","semantic"]
+categories=["api-bindings","science"]
+license="MIT"
 include = [
     "**/*.rs",
     "Cargo.toml",

@@ -134,8 +134,13 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test1() {
+        let doi = "10.1016/j.bpj.2008.12.3951";
+        let client = super::Client::new();
+        let work = client.work(&doi).unwrap();
+        assert_eq!(work.authors.len(), 2);
+        assert_eq!(work.doi, Some(doi.into()));
     }
 }
