@@ -1,7 +1,5 @@
 extern crate reqwest;
 
-use serde_json;
-
 /// Implements an author
 #[derive(Debug, Clone)]
 pub struct Author {
@@ -11,7 +9,7 @@ pub struct Author {
 }
 
 impl Author {
-    pub fn new_from_json(j: &serde_json::Value) -> Result<Author, Box<::std::error::Error>> {
+    pub fn new_from_json(j: &serde_json::Value) -> Result<Author, Box<dyn ::std::error::Error>> {
         if !j.is_object() {
             return Err(From::from(format!(
                 "JSON for Author::new_from_json is not an object: {}",
@@ -19,9 +17,9 @@ impl Author {
             )));
         }
         Ok(Author {
-            author_id: j["authorId"].as_str().map_or(None, |s| Some(s.to_string())),
-            name: j["name"].as_str().map_or(None, |s| Some(s.to_string())),
-            url: j["url"].as_str().map_or(None, |s| Some(s.to_string())),
+            author_id: j["authorId"].as_str().map(|s| s.to_string()),
+            name: j["name"].as_str().map(|s| s.to_string()),
+            url: j["url"].as_str().map(|s| s.to_string()),
         })
     }
 }
@@ -35,7 +33,7 @@ pub struct Topic {
 }
 
 impl Topic {
-    pub fn new_from_json(j: &serde_json::Value) -> Result<Topic, Box<::std::error::Error>> {
+    pub fn new_from_json(j: &serde_json::Value) -> Result<Topic, Box<dyn ::std::error::Error>> {
         if !j.is_object() {
             return Err(From::from(format!(
                 "JSON for Topic::new_from_json is not an object: {}",
@@ -43,9 +41,9 @@ impl Topic {
             )));
         }
         Ok(Topic {
-            topic_id: j["topicId"].as_str().map_or(None, |s| Some(s.to_string())),
-            topic: j["topic"].as_str().map_or(None, |s| Some(s.to_string())),
-            url: j["url"].as_str().map_or(None, |s| Some(s.to_string())),
+            topic_id: j["topicId"].as_str().map(|s| s.to_string()),
+            topic: j["topic"].as_str().map(|s| s.to_string()),
+            url: j["url"].as_str().map(|s| s.to_string()),
         })
     }
 }
@@ -69,7 +67,7 @@ pub struct Work {
 }
 
 impl Work {
-    pub fn new_from_json(j: &serde_json::Value) -> Result<Work, Box<::std::error::Error>> {
+    pub fn new_from_json(j: &serde_json::Value) -> Result<Work, Box<dyn ::std::error::Error>> {
         if !j.is_object() {
             return Err(From::from(format!(
                 "JSON for Work::new_from_json is not an object: {}",
@@ -77,18 +75,18 @@ impl Work {
             )));
         }
         let mut ret = Work {
-            arxiv_id: j["arxivId"].as_str().map_or(None, |s| Some(s.to_string())),
+            arxiv_id: j["arxivId"].as_str().map(|s| s.to_string()),
             authors: vec![],
             citation_velocity: j["citationVelocity"].as_u64(),
             citations: vec![],
-            doi: j["doi"].as_str().map_or(None, |s| Some(s.to_string())),
+            doi: j["doi"].as_str().map(|s| s.to_string()),
             influential_citation_count: j["influentialCitationCount"].as_u64(),
-            paper_id: j["paperId"].as_str().map_or(None, |s| Some(s.to_string())),
+            paper_id: j["paperId"].as_str().map(|s| s.to_string()),
             references: vec![],
-            title: j["title"].as_str().map_or(None, |s| Some(s.to_string())),
+            title: j["title"].as_str().map(|s| s.to_string()),
             topics: vec![],
-            url: j["url"].as_str().map_or(None, |s| Some(s.to_string())),
-            venue: j["venue"].as_str().map_or(None, |s| Some(s.to_string())),
+            url: j["url"].as_str().map(|s| s.to_string()),
+            venue: j["venue"].as_str().map(|s| s.to_string()),
             year: j["year"].as_u64(),
         };
         for author in j["authors"].as_array().unwrap_or(&vec![]) {
@@ -121,10 +119,10 @@ impl Client {
         Client {}
     }
 
-    pub fn work(&self, id: &str) -> Result<Work, Box<::std::error::Error>> {
+    pub async fn work(&self, id: &str) -> Result<Work, Box<dyn ::std::error::Error>> {
         let api_url = String::from("http://api.semanticscholar.org/v1");
         let url = api_url + "/paper/" + id;
-        let json: serde_json::Value = reqwest::get(url.as_str())?.json()?;
+        let json: serde_json::Value = reqwest::get(url.as_str()).await?.json().await?;
         match json["error"].as_str() {
             Some(error_string) => Err(From::from(format!("{}:{}", error_string, id))),
             None => Work::new_from_json(&json),
@@ -132,14 +130,21 @@ impl Client {
     }
 }
 
+impl Default for Client {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
 
-    #[test]
-    fn test1() {
+    #[tokio::test]
+    async fn test1() {
         let doi = "10.1016/j.bpj.2008.12.3951";
-        let client = super::Client::new();
-        let work = client.work(&doi).unwrap();
+        let client = Client::new();
+        let work = client.work(&doi).await.unwrap();
         assert_eq!(work.authors.len(), 2);
         assert_eq!(work.doi, Some(doi.into()));
     }
