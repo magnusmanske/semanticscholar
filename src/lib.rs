@@ -1,151 +1,71 @@
-extern crate reqwest;
+mod author;
+mod client;
+mod error;
+mod topic;
+mod work;
 
-/// Implements an author
-#[derive(Debug, Clone)]
-pub struct Author {
-    pub author_id: Option<String>,
-    pub name: Option<String>,
-    pub url: Option<String>,
-}
-
-impl Author {
-    pub fn new_from_json(j: &serde_json::Value) -> Result<Author, Box<dyn ::std::error::Error>> {
-        if !j.is_object() {
-            return Err(From::from(format!(
-                "JSON for Author::new_from_json is not an object: {}",
-                &j
-            )));
-        }
-        Ok(Author {
-            author_id: j["authorId"].as_str().map(|s| s.to_string()),
-            name: j["name"].as_str().map(|s| s.to_string()),
-            url: j["url"].as_str().map(|s| s.to_string()),
-        })
-    }
-}
-
-/// Implements a topic
-#[derive(Debug, Clone)]
-pub struct Topic {
-    pub topic: Option<String>,
-    pub topic_id: Option<String>,
-    pub url: Option<String>,
-}
-
-impl Topic {
-    pub fn new_from_json(j: &serde_json::Value) -> Result<Topic, Box<dyn ::std::error::Error>> {
-        if !j.is_object() {
-            return Err(From::from(format!(
-                "JSON for Topic::new_from_json is not an object: {}",
-                &j
-            )));
-        }
-        Ok(Topic {
-            topic_id: j["topicId"].as_str().map(|s| s.to_string()),
-            topic: j["topic"].as_str().map(|s| s.to_string()),
-            url: j["url"].as_str().map(|s| s.to_string()),
-        })
-    }
-}
-
-/// Implements a work (=paper)
-#[derive(Debug, Clone)]
-pub struct Work {
-    pub arxiv_id: Option<String>,
-    pub authors: Vec<Author>,
-    pub citation_velocity: Option<u64>,
-    pub citations: Vec<Work>,
-    pub doi: Option<String>,
-    pub influential_citation_count: Option<u64>,
-    pub paper_id: Option<String>,
-    pub references: Vec<Work>,
-    pub title: Option<String>,
-    pub topics: Vec<Topic>,
-    pub url: Option<String>,
-    pub venue: Option<String>,
-    pub year: Option<u64>,
-}
-
-impl Work {
-    pub fn new_from_json(j: &serde_json::Value) -> Result<Work, Box<dyn ::std::error::Error>> {
-        if !j.is_object() {
-            return Err(From::from(format!(
-                "JSON for Work::new_from_json is not an object: {}",
-                &j
-            )));
-        }
-        let mut ret = Work {
-            arxiv_id: j["arxivId"].as_str().map(|s| s.to_string()),
-            authors: vec![],
-            citation_velocity: j["citationVelocity"].as_u64(),
-            citations: vec![],
-            doi: j["doi"].as_str().map(|s| s.to_string()),
-            influential_citation_count: j["influentialCitationCount"].as_u64(),
-            paper_id: j["paperId"].as_str().map(|s| s.to_string()),
-            references: vec![],
-            title: j["title"].as_str().map(|s| s.to_string()),
-            topics: vec![],
-            url: j["url"].as_str().map(|s| s.to_string()),
-            venue: j["venue"].as_str().map(|s| s.to_string()),
-            year: j["year"].as_u64(),
-        };
-        for author in j["authors"].as_array().unwrap_or(&vec![]) {
-            ret.authors.push(Author::new_from_json(author)?);
-        }
-        for topic in j["topics"].as_array().unwrap_or(&vec![]) {
-            ret.topics.push(Topic::new_from_json(topic)?);
-        }
-        if let Some(citations) = j["citations"].as_array() {
-            for paper in citations {
-                if let Ok(paper) = Work::new_from_json(paper) {
-                    ret.citations.push(paper);
-                }
-            }
-        }
-        if let Some(references) = j["references"].as_array() {
-            for paper in references {
-                ret.references.push(Work::new_from_json(paper)?);
-            }
-        }
-        Ok(ret)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Client {}
-
-impl Client {
-    pub fn new() -> Client {
-        Client {}
-    }
-
-    pub async fn work(&self, id: &str) -> Result<Work, Box<dyn ::std::error::Error>> {
-        let api_url = String::from("http://api.semanticscholar.org/v1");
-        let url = api_url + "/paper/" + id;
-        let json: serde_json::Value = reqwest::get(url.as_str()).await?.json().await?;
-        match json["error"].as_str() {
-            Some(error_string) => Err(From::from(format!("{}:{}", error_string, id))),
-            None => Work::new_from_json(&json),
-        }
-    }
-}
-
-impl Default for Client {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub use author::Author;
+pub use client::Client;
+pub use error::Error;
+pub use topic::Topic;
+pub use work::Work;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
-    #[tokio::test]
-    async fn test1() {
-        let doi = "10.1016/j.bpj.2008.12.3951";
-        let client = Client::new();
-        let work = client.work(&doi).await.unwrap();
-        assert_eq!(work.authors.len(), 2);
-        assert_eq!(work.doi, Some(doi.into()));
+    #[test]
+    fn test_full_work_roundtrip() {
+        let j = json!({
+            "arxivId": "1234.5678",
+            "authors": [
+                {"authorId": "1", "name": "Alice", "url": "https://example.com/alice"}
+            ],
+            "citationVelocity": 10,
+            "citations": [
+                {"paperId": "cite1", "title": "Citation 1"}
+            ],
+            "doi": "10.1234/test",
+            "influentialCitationCount": 5,
+            "paperId": "abc123",
+            "references": [
+                {"paperId": "ref1", "title": "Reference 1"}
+            ],
+            "title": "A Great Paper",
+            "topics": [
+                {"topicId": "T1", "topic": "AI", "url": "https://example.com/ai"}
+            ],
+            "url": "https://example.com/paper",
+            "venue": "NeurIPS",
+            "year": 2023
+        });
+        let work = Work::new_from_json(&j).unwrap();
+        assert_eq!(work.paper_id, Some("abc123".to_string()));
+        assert_eq!(work.authors.len(), 1);
+        assert_eq!(work.authors[0].name, Some("Alice".to_string()));
+        assert_eq!(work.topics.len(), 1);
+        assert_eq!(work.topics[0].topic, Some("AI".to_string()));
+        assert_eq!(work.citations.len(), 1);
+        assert_eq!(work.references.len(), 1);
+    }
+
+    #[test]
+    fn test_public_api_exports() {
+        // Ensure all public types are accessible from the crate root
+        let _client = Client::new();
+        let _client_default = Client::default();
+
+        let author_json = json!({"authorId": "1", "name": "Test"});
+        let _author = Author::new_from_json(&author_json).unwrap();
+
+        let topic_json = json!({"topicId": "T1", "topic": "Test"});
+        let _topic = Topic::new_from_json(&topic_json).unwrap();
+
+        let work_json = json!({"paperId": "P1"});
+        let _work = Work::new_from_json(&work_json).unwrap();
+
+        let _err = Error::InvalidJson("test".to_string());
+        let _err2 = Error::Api("test".to_string());
     }
 }
