@@ -1,7 +1,7 @@
 use crate::error::Error;
 
 /// Implements an author
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Author {
     pub author_id: Option<String>,
     pub name: Option<String>,

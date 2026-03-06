@@ -1,7 +1,7 @@
 use crate::error::Error;
 
 /// Implements a topic
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Topic {
     pub topic: Option<String>,
     pub topic_id: Option<String>,

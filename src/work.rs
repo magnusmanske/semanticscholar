@@ -3,7 +3,7 @@ use crate::error::Error;
 use crate::topic::Topic;
 
 /// Implements a work (=paper)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Work {
     pub arxiv_id: Option<String>,
     pub authors: Vec<Author>,
