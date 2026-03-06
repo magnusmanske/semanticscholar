@@ -14,9 +14,9 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::InvalidJson(msg) => write!(f, "Invalid JSON: {}", msg),
-            Error::Api(msg) => write!(f, "API error: {}", msg),
-            Error::Http(err) => write!(f, "HTTP error: {}", err),
+            Error::InvalidJson(msg) => write!(f, "Invalid JSON: {msg}"),
+            Error::Api(msg) => write!(f, "API error: {msg}"),
+            Error::Http(err) => write!(f, "HTTP error: {err}"),
         }
     }
 }

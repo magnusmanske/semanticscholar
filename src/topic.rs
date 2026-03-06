@@ -9,11 +9,15 @@ pub struct Topic {
 }
 
 impl Topic {
+    /// Creates a new `Topic` from a JSON value.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Error::InvalidJson` if the provided JSON value is not an object.
     pub fn new_from_json(j: &serde_json::Value) -> Result<Topic, Error> {
         if !j.is_object() {
             return Err(Error::InvalidJson(format!(
-                "JSON for Topic::new_from_json is not an object: {}",
-                j
+                "JSON for Topic::new_from_json is not an object: {j}"
             )));
         }
         Ok(Topic {

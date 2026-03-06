@@ -9,11 +9,15 @@ pub struct Author {
 }
 
 impl Author {
+    /// Creates a new `Author` from a JSON value.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Error::InvalidJson` if the provided JSON value is not an object.
     pub fn new_from_json(j: &serde_json::Value) -> Result<Author, Error> {
         if !j.is_object() {
             return Err(Error::InvalidJson(format!(
-                "JSON for Author::new_from_json is not an object: {}",
-                j
+                "JSON for Author::new_from_json is not an object: {j}"
             )));
         }
         Ok(Author {

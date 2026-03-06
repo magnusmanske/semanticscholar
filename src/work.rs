@@ -23,26 +23,29 @@ pub struct Work {
 const EMPTY_ARRAY: &[serde_json::Value] = &[];
 
 impl Work {
+    /// Creates a new `Work` from a JSON value.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Error::InvalidJson` if the provided JSON value is not an object,
+    /// or if any nested author, topic, or reference fails to parse.
     pub fn new_from_json(j: &serde_json::Value) -> Result<Work, Error> {
         if !j.is_object() {
             return Err(Error::InvalidJson(format!(
-                "JSON for Work::new_from_json is not an object: {}",
-                j
+                "JSON for Work::new_from_json is not an object: {j}"
             )));
         }
 
         let authors = j["authors"]
             .as_array()
-            .map(|a| a.as_slice())
-            .unwrap_or(EMPTY_ARRAY)
+            .map_or(EMPTY_ARRAY, Vec::as_slice)
             .iter()
             .map(Author::new_from_json)
             .collect::<Result<Vec<_>, _>>()?;
 
         let topics = j["topics"]
             .as_array()
-            .map(|a| a.as_slice())
-            .unwrap_or(EMPTY_ARRAY)
+            .map_or(EMPTY_ARRAY, Vec::as_slice)
             .iter()
             .map(Topic::new_from_json)
             .collect::<Result<Vec<_>, _>>()?;

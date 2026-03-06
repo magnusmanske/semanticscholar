@@ -9,17 +9,25 @@ pub struct Client {
 }
 
 impl Client {
+    #[must_use]
     pub fn new() -> Client {
         Client {
             http: reqwest::Client::new(),
         }
     }
 
+    /// Fetches a work (paper) by its identifier (DOI, arxiv ID, etc.).
+    ///
+    /// # Errors
+    ///
+    /// Returns `Error::Http` if the HTTP request fails, or `Error::Api` if the
+    /// API returns an error response, or `Error::InvalidJson` if the response
+    /// cannot be parsed.
     pub async fn work(&self, id: &str) -> Result<Work, Error> {
-        let url = format!("{}/paper/{}", API_BASE_URL, id);
+        let url = format!("{API_BASE_URL}/paper/{id}");
         let json: serde_json::Value = self.http.get(&url).send().await?.json().await?;
         match json["error"].as_str() {
-            Some(error_string) => Err(Error::Api(format!("{}:{}", error_string, id))),
+            Some(error_string) => Err(Error::Api(format!("{error_string}:{id}"))),
             None => Work::new_from_json(&json),
         }
     }
