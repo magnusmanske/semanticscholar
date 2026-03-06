@@ -1,6 +1,6 @@
 [package]
 name = "semanticscholar"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Magnus Manske <magnusmanske@googlemail.com>"]
 edition = "2021"
 description="A wrapper around the [Semantic Scholar](https://www.semanticscholar.org/) API"
