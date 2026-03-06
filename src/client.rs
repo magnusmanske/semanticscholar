@@ -4,16 +4,20 @@ use crate::work::Work;
 const API_BASE_URL: &str = "https://api.semanticscholar.org/v1";
 
 #[derive(Debug, Clone)]
-pub struct Client {}
+pub struct Client {
+    http: reqwest::Client,
+}
 
 impl Client {
     pub fn new() -> Client {
-        Client {}
+        Client {
+            http: reqwest::Client::new(),
+        }
     }
 
     pub async fn work(&self, id: &str) -> Result<Work, Error> {
         let url = format!("{}/paper/{}", API_BASE_URL, id);
-        let json: serde_json::Value = reqwest::get(&url).await?.json().await?;
+        let json: serde_json::Value = self.http.get(&url).send().await?.json().await?;
         match json["error"].as_str() {
             Some(error_string) => Err(Error::Api(format!("{}:{}", error_string, id))),
             None => Work::new_from_json(&json),
